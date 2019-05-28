@@ -8,8 +8,13 @@ t = [0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5, 5]
 ctrl_x = [0, 50, 100, 150, 200, 250, 300, 350, 400]
 ctrl_y = [0, 0, 0, 0, 500, 0, 0, 0, 0]
 
+# k = 2
+# t = [150, 160, 170, 180, 190, 200, 210]
+# ctrl_x = [ 250, 300, 350, 400]
+# ctrl_y = [ 500, 200, 200, 100]
+
 n = len(t) - k - 1
-u = np.arange(t[k-1],t[n+1], 0.001)
+u = np.arange(t[k-1],t[n+1], 0.01)
 
 def B(i, k, x):
   if k==1:
@@ -26,8 +31,8 @@ def B(i, k, x):
 def fill_pixel_array_with_curve():
 
   n = len(t) - k - 1
-  u = np.arange(t[k-1],t[n+1], 0.01)
   t.sort()
+  u = np.arange(t[k-1],t[n], 0.01)
   print('ctrl_x', ctrl_x, 'ctrl_y', ctrl_y,'t', t, 'n', n, 'len(t)', len(t))
 
   print(t)
@@ -38,11 +43,17 @@ def fill_pixel_array_with_curve():
   for j in range(0,len(u)):
     for i in range(0,n):
       b = B(i, k, u[j])
+      print(u[j], i, b)
       x[j] += b * ctrl_x[i]
       y[j] += b * ctrl_y[i]
+    if j > 0:
+      pygame.draw.line(screen, FG, [x[j-1],y[j-1]], [x[j],y[j]], 2)
+      pygame.display.flip()
 
-  for j in range(0, len(u)-1):
-    pygame.draw.line(screen, FG, [x[j],y[j]], [x[j+1],y[j+1]], 2)
+  # for j in range(0, len(u)-1):
+  #   pygame.draw.line(screen, FG, [x[j],y[j]], [x[j+1],y[j+1]], 2)
+  #   pygame.display.flip()
+
 
   return x,y
 
@@ -80,7 +91,6 @@ while not done:
 
     pygame.display.flip()
     fill_pixel_array_with_curve()
-    pygame.display.flip()
     redraw = False
 
   keys = pygame.key.get_pressed()
@@ -97,10 +107,14 @@ while not done:
     pos1, pos2 = pygame.mouse.get_pos()
     if m1 == 1:
       pygame.draw.circle(screen, SELECTED_DOTS, (pos1, pos2), 5)
+      pygame.display.flip()
+
       ctrl_x.append(pos1)
       ctrl_y.append(pos2)
     else:
       pygame.draw.circle(screen, SELECTED_DOTS, (pos1, 595), 5)
+      pygame.display.flip()
+
       t.append(pos1)
     time.sleep(0.3)
 
@@ -112,13 +126,13 @@ while not done:
       redraw = True
     else:
       n = len(t) - k - 1
+      screen.fill(BG)
+      pygame.display.flip()
+
       print('ERRO')
       print('ctrl_x', ctrl_x, 'ctrl_y', ctrl_y,'t', t)
       print('Nós:', len(t))
       print('Pontos de controle:', n, 'len(ctrl_x)', len(ctrl_x))
-
-      screen.fill(BG)
-      pygame.display.flip()
       t = []
       ctrl_x = []
       ctrl_y = []
