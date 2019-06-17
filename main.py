@@ -3,137 +3,100 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-k_bspline = 4
-bspline_knots = [0, 0, 0, 0, 10, 10, 20, 30, 40, 50, 50, 50, 50, 50]
-bspline_ctrl_x = [0, 50, 100, 150, 200, 250, 300, 350, 400]
-bspline_ctrl_y = [20, 20, 20, 20, 500, 20, 20, 20, 20]
+from bspline import Bspline
+from nurbs import Nurbs
 
-k_nurbs = 3
-nurbs_knots = [400, 400, 400, 402, 405, 410, 440, 445, 450, 450, 450, 450]
-nurbs_ctrl_x = [405, 450, 500, 550, 700, 850, 900, 950]
-nurbs_ctrl_y = [405, 420, 420, 420, 460, 420, 460, 420]
-nurbs_weights = [1, 1, 1, 1, 2, 1, 1, 1]
 weight = 1
 
-def B(i, k, x, t):
-  if k==1:
-    return (1 if t[i] <= x < t[i+1] else 0)
-  else:
-    b1 = B(i, k-1, x, t)
-    safe1 = b1 * (x-t[i])/(t[i+k-1] - t[i]) if b1 > 0 else 0
+def translade(nurbs, bspline):
+  ctrl_x = nurbs.x()
+  ctrl_y = nurbs.y()
 
-    b2 = B(i+1, k-1, x, t)
-    safe2 = b2 * (t[i+k] - x)/(t[i+k] - t[i+1]) if b2 > 0 else 0
+  diff_x = nurbs.x()[0] - bspline.x()[-1]
+  diff_y = nurbs.y()[0] - bspline.y()[-1]
 
-    return safe1 + safe2
+  for i in range(len(ctrl_x)):
+    print(i, ctrl_x, ctrl_y)
+    ctrl_x[i] -= diff_x
+    ctrl_y[i] -= diff_y
 
-def draw_bspline():
-  bspline_knots.sort()
-  n = len(bspline_knots) - k_bspline - 1
-  u = np.arange(bspline_knots[k_bspline-1],bspline_knots[n], 0.1)
-  # print('ctrl_x', bspline_ctrl_x, 'ctrl_y', bspline_ctrl_y,'knots', bspline_knots, 'n', n)
+  nurbs.update(ctrl_x, ctrl_y, nurbs.w())
+  redraw_all()
 
-  x = np.zeros(len(u))
-  y = np.zeros(len(u))
+def c1(bspline, nurbs):
+  bspline_derivative = bspline.first_derivative(-1)
+  nurbs_derivative = nurbs.first_derivative(0)
+  print(bspline_derivative, nurbs_derivative)
 
-  for j in range(0,len(u)):
-    for i in range(0,n):
-      b = B(i, k_bspline, u[j], bspline_knots)
-      x[j] += b * bspline_ctrl_x[i]
-      y[j] += b * bspline_ctrl_y[i]
-    if j > 0:
-      pygame.draw.line(screen, FG, [x[j-1],y[j-1]], [x[j],y[j]], 2)
-      pygame.display.flip()
+  old_diff = diff = abs(bspline_derivative - nurbs_derivative)
 
-  return x,y
+  amount = 1
+  direction = 'y'
+  count = 0
 
-def draw_nurbs():
-  nurbs_knots.sort()
-  n = len(nurbs_knots) - k_nurbs - 1
-  u = np.arange(nurbs_knots[k_nurbs-1],nurbs_knots[n], 0.1)
-  # print('ctrl_x', nurbs_ctrl_x, 'ctrl_y', nurbs_ctrl_y,'knots', nurbs_knots, 'n', n)
+  while diff > 0.001:
+    # bspline.deslocate(-1, direction, amount)
+    nurbs.deslocate(1, direction, amount)
 
-  x = np.zeros(len(u))
-  y = np.zeros(len(u))
+    bspline_derivative = bspline.first_derivative(-1)
+    nurbs_derivative = nurbs.first_derivative(0)
+    print(bspline_derivative, nurbs_derivative)
+    redraw_all()
 
-  for j in range(0,len(u)):
-    b = np.zeros(n)
-    total_weights = 0.0
+    diff = abs(bspline_derivative - nurbs_derivative)
 
-    for i in range(0,n):
-      b[i] = B(i, k_nurbs, u[j], nurbs_knots)
-      total_weights += b[i] * nurbs_weights[i]
+    if diff > old_diff+1:
+      old_diff = diff
+      amount *= -1
+    else:
+      amount = int((amount)/abs(amount)) * int(1 + diff/2)
 
-    for i in range(0,n):
-      if total_weights == 0:
-        total_weights = 1
-      x[j] += b[i] * nurbs_ctrl_x[i] * nurbs_weights[i] / total_weights
-      y[j] += b[i] * nurbs_ctrl_y[i] * nurbs_weights[i] / total_weights
+    count += 1
+    if count >= 15:
+      count = 0
+      direction = 'y' if direction == 'x' else 'x'
+      amount = 1
+      print(f'changing direction to {direction}')
 
-    if j > 0:
-      pygame.draw.line(screen, FG, [x[j-1],y[j-1]], [x[j],y[j]], 2)
-      pygame.display.flip()
+  print('c1 atingido')
+  return True
 
-  return x,y
-
-def translade(nurbs_ctrl_x, nurbs_ctrl_y):
-  last_bspline_x = bspline_ctrl_x[-1]
-  last_bspline_y = bspline_ctrl_y[-1]
-
-  first_nurbs_x = nurbs_ctrl_x[0]
-  first_nurbs_y = nurbs_ctrl_y[0]
-
-  for i in range(len(nurbs_ctrl_x)):
-    nurbs_ctrl_x[i] -= first_nurbs_x - last_bspline_x
-    nurbs_ctrl_y[i] -= first_nurbs_y - last_bspline_y
-
-    print(first_nurbs_y + last_bspline_y)
-    # for (x, y, w) in zip(nurbs_ctrl_x, nurbs_ctrl_y, nurbs_weights):
-    #   pygame.draw.circle(screen, NURBS_DOTS, (x, y), 1 + w * 3)
-    #   pygame.display.flip()
-
-  return [nurbs_ctrl_x, nurbs_ctrl_y]
-
-def c1(bspline_ctrl_x):
-  last_bspline_x = bspline_ctrl_x[-1]
+def c2(bspline, nurbs):
+  bspline_derivative = bspline.second_derivative(-1)
+  nurbs_derivative = nurbs.second_derivative(0)
+  print(bspline_derivative, nurbs_derivative)
 
 
-  bspline = first_derivative(bspline_ctrl_x[-1], bspline_knots, k_bspline, bspline_ctrl_y)
-  nurbs = first_derivative(bspline_ctrl_x[-1], nurbs_knots, k_nurbs, nurbs_ctrl_y)
+  diff = abs(bspline_derivative - nurbs_derivative)
 
-  while bspline != nurbs:
-    print(bspline, nurbs)
-    nurbs_ctrl_y[0] += 1
-    bspline_ctrl_y[-1] += 1
+  amount = 1
+  direction = 'x'
+  count = 0
 
-    bspline = first_derivative(bspline_ctrl_x[-1], bspline_knots, k_bspline, bspline_ctrl_y)
-    nurbs = first_derivative(bspline_ctrl_x[-1], nurbs_knots, k_nurbs, nurbs_ctrl_y)
-    screen.fill(BG)
-    for (x, y) in zip(bspline_ctrl_x, bspline_ctrl_y):
-        pygame.draw.circle(screen, BSPLINE_DOTS, (x, y), 5)
-    draw_bspline()
-    for (x, y, w) in zip(nurbs_ctrl_x, nurbs_ctrl_y, nurbs_weights):
-        pygame.draw.circle(screen, NURBS_DOTS, (x, y), 1 + w * 3)
-    draw_nurbs()
+  while diff > 0.001:
+    amount = int((amount)/abs(amount)) * int(1 + diff/2)
+    print(bspline_derivative, nurbs_derivative)
 
-def first_derivative(x, knots, k, ctrl_y):
-  derivative = 0
-  n = len(knots) - k - 1
-  for i in range(0,n-1):
-    b = B(i+1, k-1, x, knots)
-    ctrl = k / (knots[i+k+1] - knots[i+1]) * (ctrl_y[i+1] - ctrl_y[i])
-    derivative += b * ctrl
+    nurbs.deslocate(2, direction, amount)
 
-  return derivative
+    # bspline_derivative = bspline.second_derivative(-1)
+    nurbs_derivative = nurbs.second_derivative(0)
+    redraw_all()
 
-def nurbs_first_derivative(x):
-  derivative_nurbs = 0
-  n = len(nurbs_knots) - k_nurbs - 1
-  for i in range(0,n):
-    b = B(i, k_nurbs-1, x, nurbs_knots)
-    derivative_nurbs += b * nurbs_ctrl_y[i]
+    old_diff = diff
+    diff = abs(bspline_derivative - nurbs_derivative)
 
-  return derivative_nurbs
+    if diff >= old_diff:
+      amount *= -1
+
+    count += 1
+    if count >= 15:
+      count = 0
+      direction = 'y' if direction == 'x' else 'x'
+      amount = 1
+      print(f'changing direction to {direction}')
+
+  print('c2 atingido')
 
 def set_weight(keys, weight):
   if keys[pygame.K_0]:
@@ -159,15 +122,19 @@ def set_weight(keys, weight):
 
   return weight
 
+def redraw_all(iterative=False):
+  if iterative:
+    screen.fill(BG)
+  bspline.draw(iterative=iterative)
+  nurbs.draw(iterative=iterative)
+
 pygame.init()
 
 BG = (51, 54, 82)
 FG = (250, 208, 44)
-BSPLINE_DOTS =  (233, 234, 236)
-NURBS_DOTS = (93, 226, 108)
 SELECTED_DOTS = (186, 104, 131)
 
-size = [1200, 600]
+size = [600, 600]
 screen = pygame.display.set_mode(size)
 
 pygame.display.set_caption("Example code for the draw module")
@@ -177,8 +144,16 @@ redraw_bspline = True
 redraw_nurbs = True
 spline = False
 weight = 1
+got_c1 = False
 clock = pygame.time.Clock()
-screen.fill(BG)
+
+bspline = Bspline(screen)
+nurbs = Nurbs(screen)
+redraw_all(iterative=True)
+
+ctrl_x = nurbs.x()
+ctrl_y = nurbs.y()
+weights = nurbs.w()
 
 while not done:
   clock.tick(20)
@@ -187,38 +162,49 @@ while not done:
       if event.type == pygame.QUIT:
           done=True
 
-  if redraw_bspline:
-    screen.fill(BG)
-    for (x, y) in zip(bspline_ctrl_x, bspline_ctrl_y):
-        pygame.draw.circle(screen, BSPLINE_DOTS, (x, y), 5)
-    draw_bspline()
-    redraw_bspline = False
-
-  if redraw_nurbs:
-    for (x, y, w) in zip(nurbs_ctrl_x, nurbs_ctrl_y, nurbs_weights):
-        pygame.draw.circle(screen, NURBS_DOTS, (x, y), 1 + w * 3)
-    draw_nurbs()
-    redraw_nurbs = False
-
   keys = pygame.key.get_pressed()
   if keys[pygame.K_t]:
-    nurbs_ctrl_x, nurbs_ctrl_y = translade(nurbs_ctrl_x, nurbs_ctrl_y)
+    translade(nurbs, bspline)
     redraw_bspline = True
     redraw_nurbs = True
+    time.sleep(0.3)
+
   elif keys[pygame.K_c]:
-    c1(bspline_ctrl_x)
-    # nurbs_ctrl_x, nurbs_ctrl_y = translade(nurbs_ctrl_x, nurbs_ctrl_y)
-    # redraw_bspline = True
-    # redraw_nurbs = True
+    if not got_c1:
+      print('buscando c1')
+      got_c1 = c1(bspline, nurbs)
+    else:
+      print('buscando c2')
+      c2(bspline, nurbs)
+    time.sleep(0.3)
+
   elif keys[pygame.K_ESCAPE]:
     screen.fill(BG)
     pygame.display.flip()
-    bspline_ctrl_x = []
-    bspline_ctrl_y = []
-    nurbs_ctrl_x = []
-    nurbs_ctrl_y = []
-    nurbs_weights = []
+    bspline.clear()
+    nurbs.clear()
+    ctrl_x = []
+    ctrl_y = []
+    spline = True
+    got_c1 = False
     time.sleep(0.3)
+
+  if spline and len(ctrl_x) == 9:
+    if bspline.update(ctrl_x, ctrl_y):
+      spline = False
+      screen.fill(BG)
+      bspline.draw(iterative=True)
+      ctrl_x = []
+      ctrl_y = []
+    else:
+      print('erro Bspline', len(ctrl_x))
+  elif (not spline) and len(ctrl_x) == 8:
+    if nurbs.update(ctrl_x, ctrl_y, weights):
+      spline = True
+      nurbs.draw(iterative=True)
+    else:
+      print('erro NURBS', len(ctrl_x))
+
 
   if spline:
     m1, m2, m3 = pygame.mouse.get_pressed()
@@ -227,8 +213,8 @@ while not done:
       pygame.draw.circle(screen, SELECTED_DOTS, (pos1, pos2), 5)
       pygame.display.flip()
 
-      bspline_ctrl_x.append(pos1)
-      bspline_ctrl_y.append(pos2)
+      ctrl_x.append(pos1)
+      ctrl_y.append(pos2)
       time.sleep(0.3)
   else:
     keys = pygame.key.get_pressed()
@@ -239,33 +225,10 @@ while not done:
     m1, m2, m3 = pygame.mouse.get_pressed()
     if m1 == 1:
       pos1, pos2 = pygame.mouse.get_pos()
-      pygame.draw.circle(screen, SELECTED_DOTS, (pos1, pos2), 1 + w * 3)
+      pygame.draw.circle(screen, SELECTED_DOTS, (pos1, pos2), 1 + weight * 3)
       pygame.display.flip()
 
-      nurbs_ctrl_x.append(pos1)
-      nurbs_ctrl_y.append(pos2)
-      nurbs_weights.append(weight)
+      ctrl_x.append(pos1)
+      ctrl_y.append(pos2)
+      weights.append(weight)
       time.sleep(0.3)
-
-
-
-  pygame.display.flip()
-  keys = pygame.key.get_pressed()
-  if keys[pygame.K_RETURN]:
-    if spline:
-      if len(bspline_ctrl_x) == len(bspline_knots) - k_bspline - 1:
-        spline = False
-        redraw_bspline = True
-      else:
-        bspline_ctrl_x = []
-        bspline_ctrl_y = []
-        print('erro Bspline', len(bspline_ctrl_xs))
-    else:
-      if len(nurbs_ctrl_x) == len(nurbs_knots) - k_nurbs - 1:
-        redraw_nurbs = True
-      else:
-        print('erro NURBS', len(nurbs_ctrl_x))
-        nurbs_ctrl_x = []
-        nurbs_ctrl_y = []
-        nurbs_weights = []
-    time.sleep(0.3)
