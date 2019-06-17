@@ -43,7 +43,7 @@ def derivative(d, i, k, x, knots, ctrl_y):
 
   n = len(knots) - k - 1
   for i in range(0+d-1,n-d):
-    derivative_sum += generic_b(d, i, k, x, knots) * ctrl_y[i]
+    derivative_sum += generic_b(d, i, k, x, knots) * (ctrl_y[i+1] - ctrl_y[i])
 
   return derivative_sum
 

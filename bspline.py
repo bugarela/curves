@@ -47,7 +47,7 @@ class Bspline:
 
   def draw_points(self):
     for (x, y) in zip(self.ctrl_x, self.ctrl_y):
-      pygame.draw.circle(self.screen, self.dots_color, (x, y), 2)
+      pygame.draw.circle(self.screen, self.dots_color, (x, y), 4)
 
   def draw_curve(self, iterative):
     self.knots.sort()
@@ -72,8 +72,13 @@ class Bspline:
       for j in range(1,len(u)):
         pygame.draw.line(self.screen, self.curve_color, [x[j-1],y[j-1]], [x[j],y[j]], 2)
 
-  def first_derivative(self, point):
-    return derivative(1, 0, self.k, self.ctrl_x[point], self.knots, self.ctrl_y)
-
-  def second_derivative(self, point):
-    return derivative(2, 0, self.k, self.ctrl_x[point], self.knots, self.ctrl_y)
+  def first_derivative(self, point1, point2):
+    return (
+      derivative(1, 0, self.k, self.ctrl_x[point2], self.knots, self.ctrl_y)
+      - derivative(1, 0, self.k, self.ctrl_x[point1], self.knots, self.ctrl_y)
+    )
+  def second_derivative(self, point1, point2):
+    return (
+      derivative(2, 0, self.k, self.ctrl_x[point2], self.knots, self.ctrl_y)
+      - derivative(2, 0, self.k, self.ctrl_x[point1], self.knots, self.ctrl_y)
+    )

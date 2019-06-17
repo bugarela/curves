@@ -24,8 +24,8 @@ def translade(nurbs, bspline):
   redraw_all()
 
 def c1(bspline, nurbs):
-  bspline_derivative = bspline.first_derivative(-1)
-  nurbs_derivative = nurbs.first_derivative(0)
+  bspline_derivative = bspline.first_derivative(-2, -1)
+  nurbs_derivative = nurbs.first_derivative(0, 1)
   print(bspline_derivative, nurbs_derivative)
 
   old_diff = diff = abs(bspline_derivative - nurbs_derivative)
@@ -34,25 +34,25 @@ def c1(bspline, nurbs):
   direction = 'y'
   count = 0
 
-  while diff > 0.001:
+  while diff > 0.01:
     # bspline.deslocate(-1, direction, amount)
     nurbs.deslocate(1, direction, amount)
 
-    bspline_derivative = bspline.first_derivative(-1)
-    nurbs_derivative = nurbs.first_derivative(0)
+    bspline_derivative = bspline.first_derivative(-2, -1)
+    nurbs_derivative = nurbs.first_derivative(0, 1)
     print(bspline_derivative, nurbs_derivative)
     redraw_all()
 
+    old_diff = diff
     diff = abs(bspline_derivative - nurbs_derivative)
 
-    if diff > old_diff+1:
-      old_diff = diff
+    if diff > old_diff:
       amount *= -1
     else:
       amount = int((amount)/abs(amount)) * int(1 + diff/2)
 
     count += 1
-    if count >= 15:
+    if count >= 5:
       count = 0
       direction = 'y' if direction == 'x' else 'x'
       amount = 1
@@ -62,10 +62,9 @@ def c1(bspline, nurbs):
   return True
 
 def c2(bspline, nurbs):
-  bspline_derivative = bspline.second_derivative(-1)
-  nurbs_derivative = nurbs.second_derivative(0)
+  bspline_derivative = bspline.second_derivative(-2, -1)
+  nurbs_derivative = nurbs.second_derivative(0, 1)
   print(bspline_derivative, nurbs_derivative)
-
 
   diff = abs(bspline_derivative - nurbs_derivative)
 
@@ -73,14 +72,14 @@ def c2(bspline, nurbs):
   direction = 'x'
   count = 0
 
-  while diff > 0.001:
+  while diff > 0.01:
     amount = int((amount)/abs(amount)) * int(1 + diff/2)
     print(bspline_derivative, nurbs_derivative)
 
     nurbs.deslocate(2, direction, amount)
 
-    # bspline_derivative = bspline.second_derivative(-1)
-    nurbs_derivative = nurbs.second_derivative(0)
+    # bspline_derivative = bspline.second_derivative(-2, -1)
+    nurbs_derivative = nurbs.second_derivative(0, 1)
     redraw_all()
 
     old_diff = diff
@@ -90,7 +89,7 @@ def c2(bspline, nurbs):
       amount *= -1
 
     count += 1
-    if count >= 15:
+    if count >= 5:
       count = 0
       direction = 'y' if direction == 'x' else 'x'
       amount = 1

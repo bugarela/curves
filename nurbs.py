@@ -10,7 +10,7 @@ BG = (51, 54, 82)
 class Nurbs:
   def __init__(self, screen):
     self.k = 3
-    self.knots = [250, 250, 250, 402, 405, 410, 440, 445, 450, 450, 450, 450]
+    self.knots = [250, 250, 250, 300, 325, 350, 390, 420, 450, 450, 450, 450]
     self.ctrl_x = [205, 250, 300, 350, 400, 450, 500, 550]
     self.ctrl_y = [405, 420, 420, 420, 460, 420, 460, 420]
     self.weights = [1, 1, 1, 1, 2, 1, 1, 1]
@@ -52,7 +52,7 @@ class Nurbs:
 
   def draw_points(self):
     for (x, y, w) in zip(self.ctrl_x, self.ctrl_y, self.weights):
-      pygame.draw.circle(self.screen, self.dots_color, (x, y), w * 2)
+      pygame.draw.circle(self.screen, self.dots_color, (x, y), 1 + w * 3)
 
   def draw_curve(self, iterative):
     self.knots.sort()
@@ -88,8 +88,16 @@ class Nurbs:
 
     return x,y
 
-  def first_derivative(self, point):
-    return derivative(1, 0, self.k, self.ctrl_x[point], self.knots, self.ctrl_y)
+  def first_derivative(self, point1, point2):
+    return (
+      derivative(1, 0, self.k, self.ctrl_x[point2], self.knots, self.ctrl_y)
+      - derivative(1, 0, self.k, self.ctrl_x[point1], self.knots, self.ctrl_y)
+    )
 
-  def second_derivative(self, point):
-    return derivative(2, 0, self.k, self.ctrl_x[point], self.knots, self.ctrl_y)
+    # return derivative(1, 0, self.k, self.ctrl_x[point], self.knots, self.ctrl_y)
+
+  def second_derivative(self, point1, point2):
+    return (
+      derivative(2, 0, self.k, self.ctrl_x[point2], self.knots, self.ctrl_y)
+      - derivative(2, 0, self.k, self.ctrl_x[point1], self.knots, self.ctrl_y)
+    )
