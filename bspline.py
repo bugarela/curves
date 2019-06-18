@@ -72,13 +72,26 @@ class Bspline:
       for j in range(1,len(u)):
         pygame.draw.line(self.screen, self.curve_color, [x[j-1],y[j-1]], [x[j],y[j]], 2)
 
-  def first_derivative(self, point1, point2):
-    return (
-      derivative(1, 0, self.k, self.ctrl_x[point2], self.knots, self.ctrl_y)
-      - derivative(1, 0, self.k, self.ctrl_x[point1], self.knots, self.ctrl_y)
-    )
-  def second_derivative(self, point1, point2):
-    return (
-      derivative(2, 0, self.k, self.ctrl_x[point2], self.knots, self.ctrl_y)
-      - derivative(2, 0, self.k, self.ctrl_x[point1], self.knots, self.ctrl_y)
-    )
+  def first_derivative(self, point):
+    return derivative(1, 0, self.k, self.ctrl_x[point], self.knots, self.ctrl_y)
+
+  def second_derivative(self, point):
+    return derivative(2, 0, self.k, self.ctrl_x[point], self.knots, self.ctrl_y)
+
+  # def draw_first_derivative(self, iterative=True):
+  #   self.knots.sort()
+  #   n = len(self.knots) - self.k - 1
+  #   u = np.arange(self.knots[self.k-1],self.knots[n], 0.1)
+
+  #   x = u
+  #   y = np.zeros(len(u))
+
+  #   for j in range(0,len(u)):
+  #     y[j] = derivative(1, 0, self.k, u[j], self.knots, self.ctrl_y)+400
+  #     if iterative and j > 0:
+  #       pygame.draw.line(self.screen, self.curve_color, [x[j-1],y[j-1]], [x[j],y[j]], 2)
+  #       pygame.display.flip()
+
+  #   if not iterative:
+  #     for j in range(1,len(u)):
+  #       pygame.draw.line(self.screen, self.curve_color, [x[j-1],y[j-1]], [x[j],y[j]], 2)

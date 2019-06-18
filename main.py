@@ -24,8 +24,10 @@ def translade(nurbs, bspline):
   redraw_all()
 
 def c1(bspline, nurbs):
-  bspline_derivative = bspline.first_derivative(-2, -1)
-  nurbs_derivative = nurbs.first_derivative(0, 1)
+  bspline_derivative = bspline.first_derivative(-1)
+  nurbs_derivative = nurbs.first_derivative(1)
+  # bspline.draw_first_derivative()
+  # nurbs.draw_first_derivative()
   print(bspline_derivative, nurbs_derivative)
 
   old_diff = diff = abs(bspline_derivative - nurbs_derivative)
@@ -38,10 +40,13 @@ def c1(bspline, nurbs):
     # bspline.deslocate(-1, direction, amount)
     nurbs.deslocate(1, direction, amount)
 
-    bspline_derivative = bspline.first_derivative(-2, -1)
-    nurbs_derivative = nurbs.first_derivative(0, 1)
+    bspline_derivative = bspline.first_derivative(-1)
+    nurbs_derivative = nurbs.first_derivative(1)
+
     print(bspline_derivative, nurbs_derivative)
     redraw_all()
+    # bspline.draw_first_derivative()
+    # nurbs.draw_first_derivative()
 
     old_diff = diff
     diff = abs(bspline_derivative - nurbs_derivative)
@@ -52,7 +57,7 @@ def c1(bspline, nurbs):
       amount = int((amount)/abs(amount)) * int(1 + diff/2)
 
     count += 1
-    if count >= 5:
+    if count >= 15:
       count = 0
       direction = 'y' if direction == 'x' else 'x'
       amount = 1
@@ -62,8 +67,8 @@ def c1(bspline, nurbs):
   return True
 
 def c2(bspline, nurbs):
-  bspline_derivative = bspline.second_derivative(-2, -1)
-  nurbs_derivative = nurbs.second_derivative(0, 1)
+  bspline_derivative = bspline.second_derivative(-1)
+  nurbs_derivative = nurbs.second_derivative(0)
   print(bspline_derivative, nurbs_derivative)
 
   diff = abs(bspline_derivative - nurbs_derivative)
@@ -78,8 +83,8 @@ def c2(bspline, nurbs):
 
     nurbs.deslocate(2, direction, amount)
 
-    # bspline_derivative = bspline.second_derivative(-2, -1)
-    nurbs_derivative = nurbs.second_derivative(0, 1)
+    # bspline_derivative = bspline.second_derivative(-1)
+    nurbs_derivative = nurbs.second_derivative(0)
     redraw_all()
 
     old_diff = diff

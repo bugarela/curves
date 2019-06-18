@@ -43,20 +43,12 @@ def derivative(d, i, k, x, knots, ctrl_y):
 
   n = len(knots) - k - 1
   for i in range(0+d-1,n-d):
-    derivative_sum += generic_b(d, i, k, x, knots) * (ctrl_y[i+1] - ctrl_y[i])
+    derivative_sum += B(i, k-d, x, knots) * P(d, i, k, x, knots, ctrl_y)
 
   return derivative_sum
 
-def generic_b(d, i, k, x, knots):
+def P(d, i, k, x, knots, ctrl_y):
   if d==0:
-    return B(i, k, x, knots)
+    return ctrl_y[i]
 
-  if (knots[i+k] - knots[i]) == 0:
-    print(generic_b(d-1, i, k-1, x, knots))
-  if (knots[i+k+1] - knots[i+1]) == 0:
-    print(generic_b(d-1, i, k-1, x, knots))
-
-  b_first = k * (generic_b(d-1, i, k-1, x, knots) / (knots[i+k] - knots[i]))
-  b_second = k * (generic_b(d-1, i+1, k-1, x, knots) / (knots[i+k+1] - knots[i+1]))
-
-  return b_first - b_second
+  return (k - d + 1) / (knots[i+k+1] - knots[i+d]) * (P(d-1, i+1, k, x, knots, ctrl_y) - P(d-1, i, k, x, knots, ctrl_y))
